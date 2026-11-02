@@ -1,0 +1,101 @@
+================================================================================
+  BPFStrike: Automated eBPF Exploitation & Post-Exploitation Framework
+  Black Hat Asia 2027 — Arsenal
+================================================================================
+
+  Dr. Sapna V M, Prajwal Chowdary M, Prasad B Honnavalli
+  PES University, Bengaluru, India
+
+================================================================================
+1. PROBLEM
+================================================================================
+eBPF allows user-supplied programs to execute inside the Linux kernel. The
+verifier — the sole safety gate — has had 8 CVEs in 2021-2024:
+
+  CVE-2021-3490    ALU32 bounds tracking bypass
+  CVE-2021-31440   BPF_RSH 32-bit bounds miscalculation
+  CVE-2022-23222   Null pointer dereference via uninitialized register
+  CVE-2023-2163    Verifier range tracking error → OOB access
+  CVE-2023-2598    io_uring BPF interaction → use-after-free
+  CVE-2023-39191   Unprivileged BPF access via nesting
+  CVE-2024-0582    io_uring ring buffer UAF via BPF
+  CVE-2024-2193    Speculative execution via BPF (GhostRace)
+
+Every Linux kernel 5.x-6.x is affected. Cloud instances, containers,
+IoT devices — billions of targets. Individual PoCs exist but are scattered
+across CTF writeups and blog posts. No unified offensive framework exists.
+
+================================================================================
+2. BPFSTRIKE
+================================================================================
+20,366 LOC · 140 tests · Python 3.8+ · zero dependencies
+
+2.1 BPF Bytecode Generator
+Real eBPF bytecode generation (8-byte aligned). All instruction classes:
+ALU64, JMP, LD, ST, STX. Proper register allocation, map operations,
+helper function calls. Not wrapper scripts — actual bytecode.
+
+2.2 Verifier Bypass Engine
+Automated bytecode generation for all 8 CVEs. Each bypass produces
+instructions that pass the vulnerable verifier but perform out-of-bounds
+kernel memory access. Kernel version detection auto-selects applicable
+bypasses.
+
+2.3 Attack Modules (13 types)
+  * Rootkit: process/file/connection hiding via BPF attachment
+  * Container escape: break cgroup/namespace via host kernel BPF
+  * Network interception: XDP/TC packet capture/modification at wire speed
+  * Credential harvesting: syscall hooking for passwords, keys, tokens
+  * Privilege escalation: verifier bypass → kernel memory corruption → root
+  * Persistence: BPF program pinning to bpffs
+  * C2 communication: covert channel via BPF maps
+  * Lateral movement: network recon via XDP
+  * Defense evasion: hide C2 traffic from tcpdump/Wireshark
+  * Kernel tampering: direct kernel memory modification
+  * Data exfiltration: kernel-level capture and covert extraction
+  * Supply chain: malicious BPF injection into observability pipelines
+  * Anti-forensics: BPF-level evidence destruction
+
+2.4 Detection & Defense
+  * Kernel version → CVE severity mapping
+  * BPF program enumeration and analysis
+  * Verifier configuration audit
+  * Hardening recommendations (unprivileged_bpf_disabled, JIT hardening)
+  * Real-time BPF event monitoring
+
+2.5 Forensic Logger
+SHA-256 integrity-chained capture of all operations and bytecode.
+
+================================================================================
+3. VALIDATION
+================================================================================
+  * 140 passing tests
+  * 1,920 bytes of validated BPF bytecode (demo output)
+  * 8 CVE reproducers with real bytecode
+  * Bytecode verified against BPF instruction set specification
+
+================================================================================
+4. PRIOR ART
+================================================================================
+  * bpf_exploit / CTF PoCs — single-CVE, single-kernel, not maintained
+  * Cilium / Falco — detection only, no offensive capability
+  * Academic papers — theory without working bytecode generators
+
+BPFStrike is, to our knowledge, the first open-source tool providing a
+complete eBPF red team capability: exploit generation, post-exploitation,
+detection, and forensic logging in one framework.
+
+================================================================================
+5. DEMO PLAN (50 min)
+================================================================================
+  1. Threat landscape (5 min) — why eBPF is the kernel's biggest attack surface
+  2. Bytecode generation (10 min) — live BPF program creation, raw bytes
+  3. Verifier bypass (10 min) — CVE-2021-3490, CVE-2023-2163 bytecode
+  4. Attack chain (15 min) — privesc → rootkit → credential harvesting →
+     network interception → C2 → exfiltration
+  5. Detection & hardening (5 min) — BPFStrike's own defense module
+  6. Q&A (5 min)
+
+  Environment: Linux VM (kernel 5.15/6.1), isolated, no host impact.
+
+================================================================================
